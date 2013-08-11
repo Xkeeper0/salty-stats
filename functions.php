@@ -1,11 +1,20 @@
 <?php
 
+	// Require important files
+	require_once("match.php");
 
+	// Set up database connection
 	$db = new PDO('mysql:host=localhost;dbname=salt;charset=utf8', 'salt', 'saltybets');
 	$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
 
+	/**
+	 * Fetch webpage if modified after $time
+	 * @param  string $addr
+	 * @param  int $time
+	 * @return string
+	 */
 	function getweb($addr, $time = null) {
 
 		$c	= curl_init($addr);
