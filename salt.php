@@ -35,7 +35,7 @@
 
 				case "open":
 					// Match starting, create bets/characters
-					$match	= new Match($data['p1name'], $data['p2name']);
+					$match	= new Match(array(1 => $data['p1name'], 2 => $data['p2name']));
 					break;
 
 				case "locked":

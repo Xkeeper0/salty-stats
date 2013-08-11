@@ -8,19 +8,22 @@
 		protected	$_characters	= array();
 
 		/**
-		 * Set up a new match between two characters
-		 * @param [type] $char1
-		 * @param [type] $char2
-		 * @todo  Maybe consider setting them via array
+		 * Set up a new match between some characters
+		 * @param array $characters
 		 */
-		public function __construct($char1, $char2) {
+		public function __construct($characters) {
 			global $db;
 			$this->_db	= $db;
 
 			// Store characters
 			print "Storing characters...";
-			$this->_characters[1]	= $this->_getCharacterId($char1);
-			$this->_characters[2]	= $this->_getCharacterId($char2);
+
+			foreach($characters as $position => $character) {
+				$this->_characters[$position]	= array(
+						'characterId'			=> $this->_getCharacterId($char1),
+						'character_match_id'	=> null,
+					);
+			}
 			print " stored ". count($this->_characters) ."\n";
 
 			// Create new match row
@@ -146,19 +149,20 @@
 								`character_id`	= :character_id,
 								`position`		= :position
 				");
-			print "Inserting characters: ". count($this->_characters) ."\n";
-			foreach ($this->_characters as $position => $characterId) {
-				print "$position: ". $this->_matchId .", ". $characterId ."\n";
+
+			foreach ($this->_characters as $position => $character) {
 				$chars->execute(array(
 						':match_id'		=> $this->_matchId,
-						':character_id'	=> $characterId,
+						':character_id'	=> $character['characterId'],
 						':position'		=> $position,
 					));
+				$this->_characters[$position]['character_match_id']	= $this->_db->lastInsertId();
 			}
 
 			$this->_db->commit();
 
 		}
+
 
 	}
 
