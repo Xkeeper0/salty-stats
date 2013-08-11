@@ -5,6 +5,7 @@
 
 	$lasttime	= null;
 	$match		= null;
+	$laststate	= null;
 
 	while (true) {
 
@@ -30,8 +31,11 @@
 				$data['alert']
 				);
 
-			switch ($data['status']) {
+			// Ignore duplicated states
+			if ($laststate == $data['status']) continue;
+			$laststate = $data['status'];
 
+			switch ($data['status']) {
 
 				case "open":
 					// Match starting, create bets/characters
@@ -40,14 +44,14 @@
 
 				case "locked":
 					// Match started, update bets
-					if ($match) $match->startMatch($data, stripdata($data));
+					if ($match) $match->startMatch(array(1 => $data['p1total'], 2 => $data['p2total']), stripdata($data));
 					break;
 
 				case "1":
+					if ($match) $match->completeMatch(1, stripdata($data));
+					break;
 				case "2":
-					// Match over, set winners
-					//$players	= stripdata($data);
-					//print_r($players);
+					if ($match) $match->completeMatch(2, stripdata($data));
 					break;
 
 
@@ -67,12 +71,6 @@
 		sleep(1);
 
 	}
-
-#	print "\n\n";
-#	print_r($json['cdata']);
-
-	print "\n\n";
-
 
 
 
