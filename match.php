@@ -138,34 +138,35 @@
 
 			foreach ($players as $playerId => $player) {
 
-				$playerUpdate->execute(array(
-						':player_id'	=> $playerId,
-						':name'			=> $player['n'],
-						':rank'			=> $player['r'],
-						':last_total'	=> $player['b'],
-					));
+				try {
 
-				if ($doBets) {
-					$betUpdate->execute(array(
-							':match_id'				=> $this->_matchId,
-							':player_id'			=> $playerId,
-							':player_bet'			=> $player['w'],
-							':player_total'			=> $player['b'],
-							':character_match_id'	=> $this->_characters[$player['p']]['characterMatchId'],
+					$playerUpdate->execute(array(
+							':player_id'	=> $playerId,
+							':name'			=> $player['n'],
+							':rank'			=> $player['r'],
+							':last_total'	=> $player['b'],
 						));
+
+					if ($doBets) {
+						try {
+							$betUpdate->execute(array(
+									':match_id'				=> $this->_matchId,
+									':player_id'			=> $playerId,
+									':player_bet'			=> $player['w'],
+									':player_total'			=> $player['b'],
+									':character_match_id'	=> $this->_characters[$player['p']]['characterMatchId'],
+								));
+						} catch (Exception $e) {
+							print "Failed to add betting data!\n". $e->getMessage() ."\n";
+							print "Match ". $this->_matchId ." - Player: [$playerId] ". $player['n'] ." - Wager: ". $player['w'] ." - Total: ". $player['b'] ." - Bet on: ". $player['p'] ." - Rank: ". $player['r'] ."\n";
+						}
+					}
+				} catch (Exception $e) {
+					print "Failed to add player data!\n". $e->getMessage() ."\n";
+					print "Match ". $this->_matchId ." - Player: [$playerId] ". $player['n'] ." - Wager: ". $player['w'] ." - Total: ". $player['b'] ." - Bet on: ". $$player['p'] ." - Rank: ". $player['r'] ."\n";
+	
 				}
 
-				/*
-				printf("[%6d] %20s - P=%2d  Wager=%6d  Total=%7d  Rank=%2d  Gold=%2d\n",
-					$id,
-					$player['n'],
-					$player['p'],
-					$player['w'],
-					$player['b'],
-					$player['r'],
-					$player['g']
-					);
-				*/
 			}
 
 			$this->_db->commit();
