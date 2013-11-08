@@ -61,7 +61,6 @@
 					} else {
 						// Give the site some time to catch up
 						print "Hmm, player data state ({$playerDataArray['status']}) didn't match the current data state ({$data['status']}). Trying again in a second.\n";
-						print_r($playerDataArray);
 						$ok	= false;
 						sleep(1);
 					}
