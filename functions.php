@@ -4,7 +4,7 @@
 	require_once("match.php");
 
 	// Set up database connection
-	$db = new PDO('mysql:host=localhost;dbname=salt;charset=utf8', 'salt', 'saltybets');
+	$db = new PDO('mysql:host=localhost;dbname=salt;charset=utf8', 'saltstats', '6tmHuwzf2MF6rYfW');
 	$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -17,11 +17,14 @@
 	 */
 	function getweb($addr, $time = null) {
 
-		$c	= curl_init($addr);
+		static $c;
+
+		if (!$c) $c	= curl_init();
+		curl_setopt($c, CURLOPT_URL, $addr);
 		curl_setopt($c, CURLOPT_TIMEOUT, 3);
-		//curl_setopt($c, CURLOPT_VERBOSE, true);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($c, CURLOPT_FILETIME, true);
+		curl_setopt($c, CURLOPT_HTTPHEADER, array("Host: www.saltybet.com"));
 
 		if ($time !== null) {
 			curl_setopt($c, CURLOPT_TIMEVALUE, $time);
@@ -31,8 +34,6 @@
 
 		$data	= curl_exec($c);
 		$cdata	= curl_getinfo($c);
-
-		curl_close($c);
 
 		return array('data' => $data, 'cdata' => $cdata);
 

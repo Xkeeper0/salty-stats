@@ -6,6 +6,7 @@
 		protected	$_db			= null;
 		protected	$_matchId		= null;
 		protected	$_characters	= array();
+		protected	$_complete	= false;
 
 		/**
 		 * Set up a new match between some characters
@@ -30,6 +31,13 @@
 			$this->_createMatch();
 
 
+		}
+
+
+		public function __destruct() {
+			if (!$this->_complete) {
+				$this->completeMatch();
+			}
 		}
 
 		/**
@@ -67,7 +75,7 @@
 		 * @param  [type] $players
 		 * @return [type]
 		 */
-		public function completeMatch($winner, $players) {
+		public function completeMatch($winner = null, $players = null) {
 			$matchUpdate	= $this->_db->prepare("
 					UPDATE	`matches`
 					SET		`duration_seconds`	= TIMESTAMPDIFF(SECOND, `match_time`, NOW())
@@ -75,18 +83,24 @@
 				");
 			$matchUpdate->execute(array(':match_id' => $this->_matchId));
 
-			$this->_updatePlayerData($players);
+			if ($players !== null) {
+				$this->_updatePlayerData($players);
+			}
 
-			$winnerQuery	= $this->_db->prepare("
+			if ($winner !== null) {
+				$winnerQuery	= $this->_db->prepare("
 					UPDATE	`character_matches`
 					SET		`winner`	= IF(`position` = :winner, 1, 0)
 					WHERE	`match_id`	= :match_id
-				");
+					");
 
-			$winnerQuery->execute(array(
+				$winnerQuery->execute(array(
 					':winner'	=> $winner,
 					':match_id'	=> $this->_matchId
 					));
+			}
+
+			$this->_complete	= true;
 
 		}
 
@@ -104,16 +118,16 @@
 					INSERT INTO	`players` (
 						`player_id`,
 						`name`,
-						`rank`,
+					". ($doBets ? "`rank`, " : "") ."
 						`last_total`
 					) VALUES (
 						:player_id,
 						:name,
-						:rank,
+					". ($doBets ? ":rank, " : "") ."
 						:last_total
 					) ON DUPLICATE KEY UPDATE
 						`name`			= :name,
-						`rank`			= :rank,
+						". ($doBets ? "`rank`			= :rank, " : "") ."
 						`last_total`	= :last_total
 				");
 
@@ -139,13 +153,16 @@
 			foreach ($players as $playerId => $player) {
 
 				try {
-
-					$playerUpdate->execute(array(
+					$updateArray	= array(
 							':player_id'	=> $playerId,
 							':name'			=> $player['n'],
-							':rank'			=> $player['r'],
 							':last_total'	=> $player['b'],
-						));
+						);
+
+					if ($doBets) {
+						$updateArray[':rank']	= $player['r'];
+					}
+					$playerUpdate->execute($updateArray);
 
 					if ($doBets) {
 						try {
@@ -164,7 +181,7 @@
 				} catch (Exception $e) {
 					print "Failed to add player data!\n". $e->getMessage() ."\n";
 					print "Match ". $this->_matchId ." - Player: [$playerId] ". $player['n'] ." - Wager: ". $player['w'] ." - Total: ". $player['b'] ." - Bet on: ". $$player['p'] ." - Rank: ". $player['r'] ."\n";
-	
+
 				}
 
 			}

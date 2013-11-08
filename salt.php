@@ -11,31 +11,40 @@
 
 		while (true) {
 
-			//$json	= getweb("http://saltybet.com/betdata.json");
-			$json	= getweb("http://saltybet.com/betdata.json", $lasttime);
+			//$matchData	= getweb("http://saltybet.com/betdata.json");
+			$matchData	= getweb("http://saltybet.com/state.json", $lasttime);
 
-			//$lasttime	= $json['cdata']['filetime'];
-			if ($json['data']) {
+			//$lasttime	= $matchData['cdata']['filetime'];
+			if ($matchData['data']) {
 
-				$lasttime       = $json['cdata']['filetime'];
+				$lasttime       = $matchData['cdata']['filetime'];
 
-				$data	= json_decode($json['data'], true);
+				$data				= json_decode($matchData['data'], true);
 				$data['p1total']	= str_replace(",", "", $data['p1total']);
 				$data['p2total']	= str_replace(",", "", $data['p2total']);
 
 				print "\n";
-				printf("%30s : %8d\n%30s : %8d\n\nstatus: %s\nalert: %s\n",
+				printf("%30s : %8d\n%30s : %8d\n\nstatus: %s\nalert: %s\nx: %s\n",
 					$data['p1name'],
 					$data['p1total'],
 					$data['p2name'],
 					$data['p2total'],
 					$data['status'],
-					$data['alert']
+					$data['alert'],
+					$data['x']
 					);
 
 				// Ignore duplicated states
-				if ($laststate == $data['status']) continue;
+				if ($laststate == $data['status']) {
+					print "ReusedState: $laststate, $data[status]\n";
+					continue;
+				}
 				$laststate = $data['status'];
+
+				sleep(1);	// give the site some time to Do Its Thing before we read the player data ...
+				$playerData	= getweb("http://saltybet.com/zdata.json", $lasttime);
+				$playerDataArray	= json_decode($playerData['data'], true);
+
 
 				switch ($data['status']) {
 
@@ -46,14 +55,14 @@
 
 					case "locked":
 						// Match started, update bets
-						if ($match) $match->startMatch(array(1 => $data['p1total'], 2 => $data['p2total']), stripdata($data));
+						if ($match) $match->startMatch(array(1 => $data['p1total'], 2 => $data['p2total']), stripdata($playerDataArray));
 						break;
 
 					case "1":
-						if ($match) $match->completeMatch(1, stripdata($data));
+						if ($match) $match->completeMatch(1, stripdata($playerDataArray));
 						break;
 					case "2":
-						if ($match) $match->completeMatch(2, stripdata($data));
+						if ($match) $match->completeMatch(2, stripdata($playerDataArray));
 						break;
 
 
@@ -63,8 +72,8 @@
 
 
 
-			} elseif ($lasttime !== $json['cdata']['filetime']) {
-				print "X";
+			} elseif ($lasttime !== $matchData['cdata']['filetime']) {
+				print "X ". $matchData['cdata']['http_code'] ."\n";
 
 			} else {
 				print ".";
@@ -81,7 +90,7 @@
 		print "Dumping data...\n";
 
 		$dumpfile	= "dump-". time() .".log";
-		file_put_contents($dumpfile, $json['data']);
+		file_put_contents($dumpfile, $matchData['data']);
 
 		print "Saved data to $dumpfile\nPlease restart me so I can track stats again\n\n";
 
@@ -97,7 +106,7 @@
 	 */
 	function stripdata($a) {
 
-		$removekeys	= array('p1name', 'p2name', 'p1total', 'p2total', 'status', 'alert');
+		$removekeys	= array('p1name', 'p2name', 'p1total', 'p2total', 'status', 'alert', 'x');
 		foreach ($removekeys as $key) {
 			unset($a[$key]);
 		}
