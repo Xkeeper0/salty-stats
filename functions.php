@@ -30,6 +30,10 @@
 			curl_setopt($c, CURLOPT_TIMEVALUE, $time);
 			curl_setopt($c, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
 			//print "derp: $time\n";
+		} else {
+			curl_setopt($c, CURLOPT_TIMEVALUE, null);
+			curl_setopt($c, CURLOPT_TIMECONDITION, null);
+
 		}
 
 		$data	= curl_exec($c);

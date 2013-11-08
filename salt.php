@@ -7,17 +7,19 @@
 	$match		= null;
 	$laststate	= null;
 
+	$matchData['cdata']['filetime']	= 0;
+
 	try {
 
 		while (true) {
+
+			$lasttime       = $matchData['cdata']['filetime'];
 
 			//$matchData	= getweb("http://saltybet.com/betdata.json");
 			$matchData	= getweb("http://saltybet.com/state.json", $lasttime);
 
 			//$lasttime	= $matchData['cdata']['filetime'];
 			if ($matchData['data']) {
-
-				$lasttime       = $matchData['cdata']['filetime'];
 
 				$data				= json_decode($matchData['data'], true);
 				$data['p1total']	= str_replace(",", "", $data['p1total']);
@@ -41,9 +43,31 @@
 				}
 				$laststate = $data['status'];
 
-				sleep(1);	// give the site some time to Do Its Thing before we read the player data ...
-				$playerData	= getweb("http://saltybet.com/zdata.json", $lasttime);
-				$playerDataArray	= json_decode($playerData['data'], true);
+				$ok		= null;
+				do {
+					$playerData			= getweb("http://saltybet.com/zdata.json");
+					$playerDataArray	= json_decode($playerData['data'], true);
+
+					if ($data['status'] === "open" || (
+							$playerDataArray['p1name'] == $data['p1name']
+							&& $playerDataArray['p2name'] == $data['p2name']
+							&& $playerDataArray['status'] == $data['status']
+						)
+					) {
+						if ($ok === false) {
+							print "Okay, everything looks good now, continuing.\n";
+						}
+						$ok	= true;
+					} else {
+						// Give the site some time to catch up
+						print "Hmm, player data state ({$playerDataArray['status']}) didn't match the current data state ({$data['status']}). Trying again in a second.\n";
+						print_r($playerDataArray);
+						$ok	= false;
+						sleep(1);
+					}
+
+				} while ($ok !== true);
+
 
 
 				switch ($data['status']) {
