@@ -1,10 +1,13 @@
 <?php
 
+	// Require configuratino file
+	require_once("config.php");
+
 	// Require important files
 	require_once("match.php");
 
 	// Set up database connection
-	$db = new PDO('mysql:host=localhost;dbname=salt;charset=utf8', 'saltstats', '6tmHuwzf2MF6rYfW');
+	$db = new PDO('mysql:host='. $config['sqlHostname'] .';dbname='. $config['sqlDatabase'] .';charset=utf8', $config['sqlUsername'], $config['sqlPassword']);
 	$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
